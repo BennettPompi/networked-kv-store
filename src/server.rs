@@ -1,7 +1,11 @@
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-pub fn listen() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+
+use crate::arg_parse::{Config, ConnectionString};
+
+pub fn listen(config: Config) -> Result<(), String> {
+    let listener =
+        TcpListener::bind(config.get_connection_string()).map_err(|e| format!("Error: {e}"))?;
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => handle_connection(stream),
@@ -11,6 +15,7 @@ pub fn listen() {
             }
         }
     }
+    Ok(())
 }
 fn handle_connection(mut stream: TcpStream) {
     println!("Received Connection!");
