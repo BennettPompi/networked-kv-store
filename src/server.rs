@@ -1,14 +1,13 @@
-use std::io::{Read, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 
 use crate::arg_parse::{Config, ConnectionString};
 
-pub fn listen(config: Config) -> Result<(), String> {
-    let listener =
-        TcpListener::bind(config.get_connection_string()).map_err(|e| format!("Error: {e}"))?;
+pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+    let listener = TcpListener::bind(config.get_connection_string())?;
     for stream in listener.incoming() {
         match stream {
-            Ok(stream) => handle_connection(stream),
+            Ok(stream) => handle_connection(stream)?,
             Err(e) => {
                 eprintln!("{}", e);
                 continue;
@@ -17,18 +16,27 @@ pub fn listen(config: Config) -> Result<(), String> {
     }
     Ok(())
 }
-fn handle_connection(mut stream: TcpStream) {
+fn handle_connection(mut stream: TcpStream) -> Result<(), Box<dyn std::error::Error>> {
     println!("Received Connection!");
-    let mut buf: Vec<u8> = Vec::new();
-    let res = stream.read_to_end(&mut buf);
-    match res {
-        Ok(byte_count) => {
-            let msg: &str = std::str::from_utf8(&buf).unwrap();
-            println!("Read {byte_count} bytes. \nReceived: \n{msg}");
-            stream.write("ACK\n".as_bytes()).unwrap();
-        }
-        Err(_) => {
-            eprintln!("Error Reading Stream!");
+    let mut write_stream = stream.try_clone()?;
+    let mut reader = BufReader::new(&mut stream);
+    let mut line = String::new();
+    loop {
+        line.clear();
+        let res = reader.read_line(&mut line);
+        match res {
+            Ok(byte_count) => {
+                if byte_count == 0 {
+                    break;
+                };
+                let reply = format!("Read {byte_count} bytes. \nReceived: \n{line}");
+                println!("{}", reply);
+                write_stream.write(reply.as_bytes())?;
+            }
+            Err(_) => {
+                eprintln!("Error Reading Stream!");
+            }
         }
     }
+    Ok(())
 }

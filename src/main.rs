@@ -1,3 +1,4 @@
+pub mod client;
 pub mod server;
 use arg_parse::{parse_args, Mode};
 fn main() {
@@ -6,12 +7,13 @@ fn main() {
         std::process::exit(1);
     });
     match config.mode {
-        Mode::Client => panic!("Not Implemented!"),
-        Mode::Server => server::listen(config).unwrap_or_else(|e| {
-            eprintln!("Error: {e}");
-            std::process::exit(1);
-        }),
+        Mode::Client => client::connect(config),
+        Mode::Server => server::run(config),
     }
+    .unwrap_or_else(|e| {
+        eprintln!("Error: {e}");
+        std::process::exit(1);
+    })
 }
 pub mod arg_parse {
     pub struct Config {
@@ -56,7 +58,7 @@ pub mod arg_parse {
     pub fn parse_args() -> Result<Config, String> {
         let mut config = Config::default();
         let mut current_flag = None;
-        for arg in std::env::args() {
+        for arg in std::env::args().skip(1) {
             match &current_flag {
                 None => current_flag = Some(parse_flag(&arg)?),
                 Some(flag) => {
