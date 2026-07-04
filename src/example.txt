@@ -1,2 +1,0 @@
-SET "olivia" {age: 24, height: 68} -> 0
-GET "olivia" -> {age: 24, height: 68}
