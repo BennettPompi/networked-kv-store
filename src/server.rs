@@ -29,7 +29,7 @@ fn handle_connection(mut stream: TcpStream) -> Result<(), Box<dyn std::error::Er
                 if byte_count == 0 {
                     break;
                 };
-                let reply = format!("Read {byte_count} bytes. \nReceived: \n{line}");
+                let reply = format!("(server): Read {byte_count} bytes. Received: {line}");
                 println!("{}", reply);
                 write_stream.write(reply.as_bytes())?;
             }
