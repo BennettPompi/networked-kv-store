@@ -8,8 +8,22 @@ enum Operation {
     Set,
     Update,
 }
-pub struct Request {
-    operation: Operation,
+pub enum Value {
+    Int(i64),
+    Text(String),
+    Bytes(Vec<u8>),
+}
+pub enum Request {
+    Get(GetRequest),
+    Set(SetRequest),
+}
+pub struct GetRequest {
+    pub key: String,
+}
+
+pub struct SetRequest {
+    pub key: String,
+    pub value: Value,
 }
 pub struct Response {}
 

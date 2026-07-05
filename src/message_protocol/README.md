@@ -3,7 +3,7 @@
 ## REQUEST:
   ```
   HEADER:  
-  | MESSAGE_LENGTH (u64) | OP_CODE (u4) | KEY_LENGTH (u8) | VALUE_TYPE (u8) |
+  | MESSAGE_LENGTH (u64) | OP_CODE (u4) | KEY_LENGTH (u8) | VALUE_TYPE (u8, optional) |
   CONTENT: 
   | KEY (bytes[KEY_LENGTH]) | VALUE (bytes[], optional) | 
   ```
