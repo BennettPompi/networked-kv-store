@@ -3,14 +3,14 @@
 ## REQUEST:
   ```
   HEADER:  
-  | MESSAGE_LENGTH (u64) | OP_CODE (u4) | KEY_LENGTH (u8) | VALUE_TYPE (u8, optional) |
+  | MESSAGE_LENGTH (u64) | OP_CODE (u8) | KEY_LENGTH (u8) |
   CONTENT: 
-  | KEY (bytes[KEY_LENGTH]) | VALUE (bytes[], optional) | 
+  | KEY (bytes[KEY_LENGTH]) ( [ | VALUE_TYPE (u8) | VALUE (bytes[]) | ], optional) 
   ```
 
 ## RESPONSE:
 ```
-  HEADER:  | MESSAGE_LENGTH (u64) | STATUS_CODE (u4) | VALUE_TYPE (u8) 
+  HEADER:  | MESSAGE_LENGTH (u64) | STATUS_CODE (u8) | VALUE_TYPE (u8) 
   CONTENT: | VALUE (bytes[]) |
 ```
 
