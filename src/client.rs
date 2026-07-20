@@ -1,9 +1,11 @@
 use crate::arg_parse::{Config, ConnectionString};
+use crate::message_protocol::{Request, Serializable};
 
 use std::io::{self, BufReader};
 use std::io::{BufRead, Write};
 
 use std::net::TcpStream;
+use std::str::FromStr;
 
 pub fn connect(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mut write_stream = TcpStream::connect(config.get_connection_string())?;
@@ -18,12 +20,13 @@ pub fn connect(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         if input.starts_with("/quit") {
             break;
         }
+        // todo: clean this up it's very gross
+        let req = Request::serialize(Request::from_str(&input).unwrap())?;
 
-        write_stream.write(input.as_bytes())?;
+        write_stream.write(&req)?;
         write_stream.flush()?;
         reader.read_line(&mut output)?;
         input.clear();
-        println!("{}", output.trim());
         output.clear();
     }
     Ok(())

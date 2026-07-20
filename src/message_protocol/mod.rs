@@ -1,6 +1,7 @@
+use std::io::{Cursor, Read};
 use std::str::FromStr;
 
-const MESSAGE_LENGTH_BYTES: u8 = 8;
+const CONTENT_LENGTH_BYTES: usize = 8;
 pub enum Value {
     UInt(u32),
     Int(i32),
@@ -21,6 +22,8 @@ pub struct SetRequest {
     pub value: Value,
 }
 pub struct Response {}
+
+#[derive(Debug)]
 pub enum ParseRequestError {
     InvalidArg,
     MissingArg(String),
@@ -66,20 +69,16 @@ impl FromStr for Request {
         let mut parts = s.splitn(3, " ");
         let command = parts.next();
         match command.map(|s| s.to_lowercase()).as_deref() {
-            Some("set") => Request::Set(parse_set_request(parts)?),
-            Some("get") => Request::Get(parse_get_request(parts)?),
+            Some("set") => Ok(Request::Set(parse_set_request(parts)?)),
+            Some("get") => Ok(Request::Get(parse_get_request(parts)?)),
             Some(_) => return Err(ParseRequestError::InvalidArg),
             None => return Err(ParseRequestError::MissingArg(String::from("OpType"))),
-        };
-
-        Err(ParseRequestError::UnknownType(String::from(
-            "Not Implemented",
-        )))
+        }
     }
 }
 pub trait Serializable<T, E> {
     fn serialize(input: T) -> Result<Vec<u8>, E>;
-    fn deserialize(bytes: &[u8]) -> Result<T, E>;
+    fn deserialize(bytes: &Vec<u8>) -> Result<T, Box<dyn std::error::Error>>;
 }
 fn serialize_op_code(req: &Request) -> u8 {
     match req {
@@ -143,7 +142,7 @@ impl Serializable<Request, String> for Request {
         };
         let mut buf: Vec<u8> = Vec::new();
         // placeholder value: we'll fill this in once we've serialized the rest of the message
-        buf.extend_from_slice(&[0u8; MESSAGE_LENGTH_BYTES as usize]);
+        buf.extend_from_slice(&[0u8; CONTENT_LENGTH_BYTES]);
 
         buf.push(op_code);
         buf.push(key_length);
@@ -159,13 +158,24 @@ impl Serializable<Request, String> for Request {
             _ => return Err("Invalid value state".to_string()),
         }
         // fill in message length
-        let message_length: u64 = (buf.len() - MESSAGE_LENGTH_BYTES as usize) as u64;
-        buf[0..8].copy_from_slice(&message_length.to_be_bytes());
+        let content_length: u64 = (buf.len() - CONTENT_LENGTH_BYTES) as u64;
+        buf[0..8].copy_from_slice(&content_length.to_be_bytes());
 
         return Ok(buf);
     }
 
-    fn deserialize(bytes: &[u8]) -> Result<Request, String> {
-        todo!()
+    fn deserialize(bytes: &Vec<u8>) -> Result<Request, Box<dyn std::error::Error>> {
+        let mut cursor = Cursor::new(bytes);
+        let mut op_code_buf = [0u8; 1];
+        cursor.read_exact(&mut op_code_buf)?;
+        let mut key_length_buf = [0u8; 1];
+        cursor.read_exact(&mut key_length_buf)?;
+        let op_code: u8 = u8::from_be_bytes(op_code_buf);
+        let key_length: u8 = u8::from_be_bytes(key_length_buf);
+        let mut key_buf = vec![0u8; key_length as usize];
+        cursor.read_exact(&mut key_buf)?;
+        let key: String = String::from_utf8(key_buf)?;
+        println!("len: {}, op_code: {}, key: {}", bytes.len(), op_code, key);
+        todo!("Finish this")
     }
 }
